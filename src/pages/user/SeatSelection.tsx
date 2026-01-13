@@ -8,6 +8,7 @@ import './SeatSelection.css';
 // Types for seat rendering
 interface RenderSeat {
     id: string; // The backend seatId (e.g., "A1")
+    uniqueId?: string; // Composite key for internal status tracking
     type: number; // 0: Gap, 1: Standard, 2: Premium, 3: Diamond
     status: 'available' | 'booked' | 'selected' | 'gap';
     price: number;
@@ -121,7 +122,15 @@ function SeatSelection() {
                     seatIndex++;
 
                     if (!seatData || seatData.type === 0) {
-                        rowSeats.push({ id: `gap-${cat.catId}-${r}-${c}`, type: 0, status: 'gap', price: 0, categoryName: cat.name });
+                        // Use a guaranteed unique key for gaps too to avoid key warnings
+                        rowSeats.push({
+                            id: `gap-${cat.catId}-${r}-${c}`,
+                            uniqueId: `gap-${cat.catId}-${r}-${c}`,
+                            type: 0,
+                            status: 'gap',
+                            price: 0,
+                            categoryName: cat.name
+                        });
                         continue;
                     }
 
@@ -133,10 +142,14 @@ function SeatSelection() {
                     const availStatus = statusMap.get(seatData.seatId);
                     // 0 = Booked, 1 = Available (Assuming)
                     const isBooked = availStatus === 0;
-                    const isSelected = selectedSeats.includes(seatData.seatId);
+
+                    // Create Composite Unique ID to avoid collisions across categories
+                    const uniqueId = `${cat.catId}_${seatData.seatId}`;
+                    const isSelected = selectedSeats.includes(uniqueId);
 
                     rowSeats.push({
                         id: seatData.seatId,
+                        uniqueId: uniqueId, // Internal tracking key
                         type: seatData.type,
                         status: isBooked ? 'booked' : (isSelected ? 'selected' : 'available'),
                         price: price,
@@ -156,14 +169,15 @@ function SeatSelection() {
     const handleSeatClick = (seat: RenderSeat) => {
         if (seat.status === 'booked' || seat.status === 'gap') return;
 
-        if (selectedSeats.includes(seat.id)) {
-            setSelectedSeats(prev => prev.filter(id => id !== seat.id));
+        // Use uniqueId for logic
+        if (selectedSeats.includes(seat.uniqueId)) {
+            setSelectedSeats(prev => prev.filter(id => id !== seat.uniqueId));
         } else {
             if (selectedSeats.length >= 10) {
                 alert("You can only select up to 10 seats.");
                 return;
             }
-            setSelectedSeats(prev => [...prev, seat.id]);
+            setSelectedSeats(prev => [...prev, seat.uniqueId]);
         }
     };
 
@@ -174,6 +188,9 @@ function SeatSelection() {
     };
 
     const handleTimeChange = (newShow: any) => {
+        // effectiveDate and urlTheatreId are not defined in the original context.
+        // Keeping the original navigate structure to avoid introducing undefined variables,
+        // while still applying the setSelectedSeats change.
         navigate(`/buy/${movieId}/${newShow.showId}`, {
             state: {
                 ...state,
@@ -185,10 +202,11 @@ function SeatSelection() {
     };
 
     const totalPrice = useMemo(() => {
-        return selectedSeats.reduce((sum, seatId) => {
+        return selectedSeats.reduce((sum, uniqueId) => {
             for (const cat of categories) {
                 for (const row of cat.grid) {
-                    const seat = row.find((s: RenderSeat) => s.id === seatId);
+                    // Match by uniqueId now to guarantee correct price
+                    const seat = row.find((s: RenderSeat) => s.uniqueId === uniqueId);
                     if (seat) return sum + seat.price;
                 }
             }
@@ -243,78 +261,77 @@ function SeatSelection() {
                 {/* Categories with Prices */}
                 {categories.map((cat: any) => (
                     <div key={cat.catId} className="category-section">
-                        <div key={cat.catId} className="category-section">
-                            <div className="category-header">
-                                {/* Exact BMS Format: ₹190 PLATINUM */}
-                                ₹{cat.price} {cat.name}
+                        <div className="category-header">
+                            {/* Exact BMS Format: ₹190 PLATINUM */}
+                            ₹{cat.price} {cat.name}
+                        </div>
+
+                        <div className="grid-with-labels">
+                            {/* Left Row Labels */}
+                            <div className="row-labels-col">
+                                {cat.rowLabels.map((label: string, idx: number) => (
+                                    <div key={idx} className="row-label-cell">
+                                        {label}
+                                    </div>
+                                ))}
                             </div>
 
-                            <div className="grid-with-labels">
-                                {/* Left Row Labels */}
-                                <div className="row-labels-col">
-                                    {cat.rowLabels.map((label: string, idx: number) => (
-                                        <div key={idx} className="row-label-cell">
-                                            {label}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* The Grid */}
-                                <div className="seats-grid" style={{
-                                    gridTemplateColumns: `repeat(${cat.columns}, 1fr)`
-                                }}>
-                                    {cat.grid.map((row: RenderSeat[], rIndex: number) => (
-                                        row.map((seat: RenderSeat, cIndex: number) => (
+                            {/* The Grid */}
+                            <div className="seats-grid" style={{
+                                gridTemplateColumns: `repeat(${cat.columns}, 1fr)`
+                            }}>
+                                {cat.grid.map((row: RenderSeat[], rIndex: number) => (
+                                    row.map((seat: RenderSeat, cIndex: number) => (
+                                        <div
+                                            key={`${rIndex}-${cIndex}`}
+                                            className="seat-container"
+                                        >
                                             <div
-                                                key={`${rIndex}-${cIndex}`}
-                                                className="seat-container"
+                                                className={`seat-cell ${seat.status} type-${seat.type}`}
+                                                onClick={() => handleSeatClick(seat)}
+                                                title={seat.price > 0 ? `Rs. ${seat.price} | ${seat.id}` : seat.id}
                                             >
-                                                <div
-                                                    className={`seat-cell ${seat.status} type-${seat.type}`}
-                                                    onClick={() => handleSeatClick(seat)}
-                                                    title={seat.price > 0 ? `Rs. ${seat.price} | ${seat.id}` : seat.id}
-                                                >
-                                                    {/* Only show number if not booked */}
-                                                    {seat.status !== 'gap' && seat.status !== 'booked' && (
-                                                        <span className="seat-num">{seat.id.replace(/[A-Z]/g, '')}</span>
-                                                    )}
-                                                </div>
+                                                {/* Only show number if not booked */}
+                                                {seat.status !== 'gap' && seat.status !== 'booked' && (
+                                                    <span className="seat-num">{seat.id.replace(/[A-Z]/g, '')}</span>
+                                                )}
                                             </div>
-                                        ))
-                                    ))}
-                                </div>
+                                        </div>
+                                    ))
+                                ))}
                             </div>
-                        </div>
-                ))}
-
-                        <div className="screen-direction">
-                            <div className="screen-svg-container">
-                                <svg viewBox="0 0 100 20" preserveAspectRatio="none">
-                                    <path d="M0 20 Q 50 0 100 20" fill="#dce4ed" opacity="0.6" />
-                                </svg>
-                            </div>
-                            <p>All eyes this way please!</p>
-                        </div>
-
-                        <div className="seat-legend">
-                            <div className="legend-item"><span className="legend-box available"></span> Available</div>
-                            <div className="legend-item"><span className="legend-box selected"></span> Selected</div>
-                            <div className="legend-item"><span className="legend-box sold"></span> Sold</div>
                         </div>
                     </div>
+                ))}
 
-            {/* Footer */ }
+                <div className="screen-direction">
+                    <div className="screen-svg-container">
+                        <svg viewBox="0 0 100 20" preserveAspectRatio="none">
+                            <path d="M0 20 Q 50 0 100 20" fill="#dce4ed" opacity="0.6" />
+                        </svg>
+                    </div>
+                    <p>All eyes this way please!</p>
+                </div>
+
+                <div className="seat-legend">
+                    <div className="legend-item"><span className="legend-box available"></span> Available</div>
+                    <div className="legend-item"><span className="legend-box selected"></span> Selected</div>
+                    <div className="legend-item"><span className="legend-box sold"></span> Sold</div>
+                </div>
+            </div>
+
+            {/* Footer */}
             {
-                        selectedSeats.length > 0 && (
-                            <div className="pay-footer">
-                                <button className="pay-btn" onClick={() => navigate('/payment')}>
-                                    Pay ₹{totalPrice}
-                                </button>
-                            </div>
-                        )
-                    }
+                selectedSeats.length > 0 && (
+                    <div className="pay-footer">
+                        <button className="pay-btn" onClick={() => navigate('/payment')}>
+                            Pay ₹{totalPrice}
+                        </button>
+                    </div>
+                )
+            }
         </div>
-            );
+    );
 }
 
-            export default SeatSelection;
+export default SeatSelection;
