@@ -1,0 +1,173 @@
+.location-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease-out;
+}
+
+.location-modal {
+    background: white;
+    width: 100%;
+    max-width: 800px;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    color: #333;
+    animation: slideUp 0.3s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.modal-header h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+    padding: 0 8px;
+}
+
+.search-location {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px;
+}
+
+.search-location input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 0.95rem;
+}
+
+.search-location button {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.detect-section {
+    margin-bottom: 30px;
+}
+
+.detect-btn {
+    color: #f84464;
+    background: none;
+    border: none;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+}
+
+.detect-btn:hover {
+    text-decoration: underline;
+}
+
+.error-msg {
+    color: red;
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+.popular-cities h3 {
+    font-size: 0.9rem;
+    color: #666;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 15px;
+    letter-spacing: 0.5px;
+}
+
+.city-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 15px;
+    text-align: center;
+}
+
+.city-item {
+    cursor: pointer;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.city-item:hover {
+    border-color: #ddd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.city-icon {
+    display: block;
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+}
+
+.city-name {
+    font-size: 0.85rem;
+    color: #333;
+    font-weight: 500;
+}
+
+.other-cities-link {
+    text-align: center;
+    margin-top: 25px;
+}
+
+.other-cities-link a {
+    color: #f84464;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

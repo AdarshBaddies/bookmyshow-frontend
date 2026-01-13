@@ -1,0 +1,58 @@
+.movie-admin-layout {
+    display: flex;
+    min-height: 100vh;
+    background: var(--color-background);
+}
+
+.movie-admin-sidebar {
+    width: 260px;
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-surface-elevated);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+    left: 0;
+    top: 0;
+}
+
+.movie-admin-content {
+    flex: 1;
+    margin-left: 260px;
+    display: flex;
+    flex-direction: column;
+}
+
+.movie-admin-header {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-surface-elevated);
+    padding: var(--spacing-lg) var(--spacing-xl);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.movie-admin-main {
+    flex: 1;
+    padding: var(--spacing-xl);
+    overflow-y: auto;
+}
+
+/* Inherit sidebar styles from theatre admin */
+.movie-admin-sidebar .sidebar-header h2 {
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+@media (max-width: 768px) {
+    .movie-admin-sidebar {
+        transform: translateX(-100%);
+        transition: transform var(--transition-normal);
+    }
+
+    .movie-admin-content {
+        margin-left: 0;
+    }
+}

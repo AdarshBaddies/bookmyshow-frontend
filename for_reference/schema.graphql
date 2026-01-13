@@ -1,0 +1,410 @@
+scalar DateTime
+
+# =============================
+# Location Inputs & Types
+# =============================
+input AddLocationInput {
+  id: String!
+  name: String!
+  lon: Float!
+  lat: Float!
+}
+
+input QueryWithLocation {
+  lon: Float!
+  lat: Float!
+  radius: Float!
+  movieId: String
+}
+
+type Location {
+  id: String!
+  name: String!
+  lon: Float!
+  lat: Float!
+}
+
+# =============================
+# User
+# =============================
+input AddUserDataInput {
+  locId: String
+  email: String
+  phone: String
+  lon: Float!
+  lat: Float!
+}
+
+type UserData {
+  id: String!
+  locId: String
+  email: String
+  phone: String
+  lon: Float
+  lat: Float
+}
+
+# =============================
+# Movie
+# =============================
+type Movie {
+  movieId: String!
+  title: String!
+  genres: [String!]!
+  duuid: String!
+  releaseDate: String!
+  cert: String!
+  langs: [String!]!
+  castUUID: [String!]!
+  crewUUID: [String!]!
+  duration: String!
+  description: String!
+}
+
+type MoviePreview {
+  movieId: String!
+  title: String!
+  genres: [String!]!
+}
+
+input AddMovieInput {
+  movieId: String!
+  title: String!
+  genres: [String!]!
+  duuid: String!
+  releaseDate: String!
+  cert: String!
+  langs: [String!]!
+  castUUID: [String!]!
+  crewUUID: [String!]!
+  duration: String!
+  description: String!
+}
+
+
+# =============================
+# Theatre
+# =============================
+
+
+
+input InputLocation {
+  lon: Float!
+  lat: Float!
+}
+
+input TheatreRegistrationInput {
+  name: String!
+  location: InputLocation!
+  locId:  String!
+  locationName: String!
+  pan: String!
+  link: String!
+}
+
+type TheatreLocation {
+  lon: Float!
+  lat: Float!
+}
+
+type Theatre {
+  id: String!
+  name: String!
+  location: TheatreLocation!
+  locId:  String!
+  locationName: String!
+  pan: String!
+  link: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Theatres {
+  id: String!
+  name: String!
+  location: TheatreLocation!
+  locId:  String!
+  locationName: String!
+  link: String!
+}
+
+
+
+
+# =============================
+# Sreen
+# =============================
+
+
+type Seat {
+  type: Int!
+  seatId: String!
+}
+
+type Category {
+  catId: Int!
+  name: String!
+  rows: Int!
+  columns: Int!
+  seats: [Seat!]!
+}
+
+type Screen {
+  id: ID!
+  name: String!
+  theatreId: ID!
+  layoutId: ID
+  categories: [Category!]
+  seatIDs: [String!]!
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input SeatInput {
+  type: Int!
+  seatId: String!
+}
+
+input CategoryInput {
+  catId: Int!
+  name: String!
+  rows: Int!
+  columns: Int!
+  seats: [SeatInput!]!
+}
+
+input ScreenInput {
+  name: String!
+  theatreId: ID!
+  categories: [CategoryInput!]!
+  seatIDs: [String!]!
+}
+
+
+# =============================
+# Shows
+# =============================
+
+type CategoryDetails {
+  categoryId: Int!
+  rowCount: Int!
+  columnsCount: Int!
+  categoryName: String!
+  price: Float!
+  currency: String!
+}
+
+# type BookedSeatDetails {
+#   categoryId: Int!
+#   price: Float!
+#   seatType: Int!
+#   rowName: String!
+#   seatNo: Int!
+# }
+
+# type BookingDetails {
+#   bookingId: String!
+#   showId: Int!
+#   userId: ID!
+#   bookingStatus: Int!
+#   totalPrice: Float!
+#   currency: String!
+#   createdAt: DateTime!
+#   updatedTime: DateTime!
+#   seats: [BookedSeatDetails!]!
+# }
+
+type Show {
+  movieId: String!
+  theatreId: String!
+  screenId: String!
+  layoutId: String!
+  screenConfig: String
+  status: Int!
+  publishTime: DateTime!
+  showTime: DateTime!
+  categoryDetails: [CategoryDetails!]
+  bookingDetails: [BookingDetails!]
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  showId: Int!
+}
+
+
+input InputCategoryDetails {
+  categoryId: Int!
+  rowCount: Int!
+  columnsCount: Int!
+  categoryName: String!
+  price: Float!
+  currency: String!
+}
+
+input InputShowDetails {
+  screenId: String!
+  status: Int!
+  publishTime: DateTime!
+  showTime: DateTime!
+  categoryDetails: [InputCategoryDetails!]!
+  lang: String!
+  layoutId: String!
+}
+
+
+
+
+# get shows for users from the redis
+# Matches pb.CacheShow
+type CacheShow {
+  showId: Int!
+  screenId: String!
+  layoutId: String!
+  screenConfig: String
+  status: Int!
+  publishTime: DateTime!
+  showTime: DateTime!
+  categoryDetails: [CategoryDetails!]
+}
+
+
+type ShowTheatre {
+  Date: String!
+  TID: String!
+  TN: String!
+  locId: String!
+  LC: TheatreLocation!
+  LN: String! 
+  LK: String! 
+  Dist: Float!
+  SHS: [CacheShow!]!
+}
+
+# =============================
+# booking
+# =============================
+
+type SeatAvailability {
+  seatID: String!
+  Status: Int!
+}
+
+type BookingDetails {
+  booking_id: String!
+  show_id: Int!
+  user_id: ID!
+  total_price: Float!
+  payment_status: Int!
+  booking_status: Int!
+  created_at: DateTime!
+  updated_at: DateTime!
+  seatIDs: [String!]!
+}
+
+
+
+
+
+input SeatLockInput {
+  showID: Int!
+  userID: ID!
+  categoryId: Int
+  seatIDs: [String!]!
+}
+type SeatLockResponse {
+  success: Boolean!
+  BID: String
+  showID: Int!
+  userID: ID!
+  expiresAt: DateTime
+  message: String!
+  total_price: Float!
+}
+
+
+
+input SeatReleaseInput {
+  showID: Int!
+  BID: ID!
+  userID: ID!
+  seatIDs: [String!]!
+}
+type ReleaseResponse {
+    rply: Boolean!
+    msg: String!
+}
+
+
+input MakePaymentInput {
+  bookingID: ID!
+  paymentMethodId: ID!
+}
+type MakePaymentResponse {
+  bookingID: String!
+  paymentURL: String
+  clientSecret: String
+  message: String!
+}
+
+# for redis for user
+type Seats {
+  id: String!
+  Status: String!
+}
+
+
+
+# =============================
+# Root Operations
+# =============================
+type Query {
+  getMovies(user: QueryWithLocation!): [MoviePreview!]!
+  movie(id: String!): Movie!
+  fetchUser(id: String): UserData!
+  
+  
+  fetchTheatre(id: String!): Theatre!
+  fetchTheatreByLoc(location: InputLocation!): [Theatres!]!
+
+  getScreens(theatreId: ID!): [Screen!]!
+  getScreen(layoutId: String!): Screen!
+
+  # from redis
+  getShowDates(locID: String!, movieID: String!): [String!]!
+  getShows(user: QueryWithLocation, d: String!): [ShowTheatre!]!
+
+  getShowsForAdmin(theatreId: String!): [Show!]!
+  getShowDetails(theatreId: String!, showId: Int!, showTime: DateTime!): Show!
+
+  # from booking_service
+  getAvailableSeats(show_id: Int!): [SeatAvailability!]!
+  getBookingsDetails(show_id: Int!): [BookingDetails!]!
+  getBookingDetails(bookId: String!): BookingDetails!
+
+  # from redis
+  getSeats(id: String!): [Seats!]!
+}
+
+type Mutation {
+  addLocation(loc: [AddLocationInput!]!): String!
+
+  addGuestUser(guest: AddUserDataInput): UserData!
+  addUser(user: AddUserDataInput!): UserData!
+  
+
+  createMovie(movie: AddMovieInput!): Movie!
+  updateMovie(movie: AddMovieInput!): Movie!
+  deleteMovie(id: String!): Boolean!
+
+  addTheatre(theatre: TheatreRegistrationInput!): Theatre!
+
+  addScreen(screen: ScreenInput!): Screen!
+
+  addShow(date: DateTime! movieID: String! theatreId: String! shs: [InputShowDetails!]!): [Show!]! 
+  updateShowStatus(theatreId: String! showId: Int! status: Int!): Show!
+  # updateShow(date: DateTime! movieID: String! t: UpdateShowTheatre!): ShowTheatre!
+
+  lockSeats(lock: SeatLockInput!): SeatLockResponse!
+  releaseSeats(rel: SeatReleaseInput!): ReleaseResponse!
+
+  makePayment(input: MakePaymentInput!): MakePaymentResponse!
+}
