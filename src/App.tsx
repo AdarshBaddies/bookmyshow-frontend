@@ -9,6 +9,8 @@ import MovieAdminLayout from './layouts/MovieAdminLayout';
 
 // User Pages
 import HomePage from './pages/user/HomePage';
+import MovieDetails from './pages/user/MovieDetails';
+import ShowSelection from './pages/user/ShowSelection';
 
 // Theatre Admin Pages
 import TheatreAdminDashboard from './pages/theatre-admin/TheatreAdminDashboard';
@@ -38,7 +40,8 @@ function App() {
                     {/* User Portal */}
                     <Route path="/" element={<UserLayout />}>
                         <Route index element={<HomePage />} />
-                        {/* More user routes will be added */}
+                        <Route path="movie/:movieId" element={<MovieDetails />} />
+                        <Route path="book/:movieId" element={<ShowSelection />} />
                     </Route>
 
                     {/* Theatre Admin Portal */}
