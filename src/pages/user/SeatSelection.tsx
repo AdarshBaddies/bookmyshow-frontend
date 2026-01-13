@@ -201,6 +201,18 @@ function SeatSelection() {
     }, [screenData, availabilityData, currentShow, selectedSeats]);
 
 
+    // 5. Booking Mutations
+    const [lockSeatsMutation, { loading: locking }] = useMutation(gql`
+        mutation LockSeats($lock: SeatLockInput!) {
+            lockSeats(lock: $lock) {
+                success
+                BID
+                expiresAt
+                message
+            }
+        }
+    `);
+
     // Handlers
     const handleSeatClick = (seat: RenderSeat) => {
         if (seat.status === 'booked' || seat.status === 'gap') return;
@@ -208,31 +220,69 @@ function SeatSelection() {
 
         // Check if switching category
         if (selectedCategory !== null && selectedCategory !== seat.catId && selectedSeats.length > 0) {
-            // User is picking a seat in a NEW category.
-            // Clear previous selections and start fresh with this new seat.
             setSelectedCategory(seat.catId);
             setSelectedSeats([seat.uniqueId]);
             return;
         }
 
         if (selectedSeats.includes(seat.uniqueId)) {
-            // Deselecting...
             const newSelection = selectedSeats.filter(id => id !== seat.uniqueId);
             setSelectedSeats(newSelection);
             if (newSelection.length === 0) {
-                setSelectedCategory(null); // Reset category if all deselected
+                setSelectedCategory(null);
             }
         } else {
-            // Selecting...
             if (selectedSeats.length >= 10) {
                 alert("You can only select up to 10 seats.");
                 return;
             }
-            // First seat selected? Set category
             if (selectedSeats.length === 0) {
                 setSelectedCategory(seat.catId);
             }
             setSelectedSeats(prev => [...prev, seat.uniqueId!]);
+        }
+    };
+
+    const handlePayClick = async () => {
+        if (selectedSeats.length === 0) return;
+
+        // Extract pure Seat IDs (remove unique prefix)
+        const pureSeatIds = selectedSeats.map(id => id.split('_')[1]);
+
+        try {
+            const userId = "123e4567-e89b-12d3-a456-426614174000";
+            const { data } = await lockSeatsMutation({
+                variables: {
+                    lock: {
+                        showID: parseInt(showId || '0'),
+                        userID: userId,
+                        categoryId: selectedCategory,
+                        seatIDs: pureSeatIds
+                    }
+                }
+            });
+
+            if (data?.lockSeats?.success) {
+                const bid = data.lockSeats.BID;
+                const expiresAt = data.lockSeats.expiresAt;
+
+                navigate('/payment', {
+                    state: {
+                        bookingId: bid,
+                        expiresAt: expiresAt,
+                        totalPrice: totalPrice,
+                        movieTitle: passedMovieTitle,
+                        theatreName: theatreName,
+                        seats: pureSeatIds.join(', '),
+                        showId: parseInt(showId || '0')
+                    }
+                });
+            } else {
+                alert(data?.lockSeats?.message || "Seats overlap or invalid.");
+            }
+        } catch (err) {
+            console.error("Lock failed:", err);
+            alert("Failed to lock seats. Please try again.");
         }
     };
 
@@ -379,8 +429,8 @@ function SeatSelection() {
             {
                 selectedSeats.length > 0 && (
                     <div className="pay-footer">
-                        <button className="pay-btn" onClick={() => navigate('/payment')}>
-                            Pay ₹{totalPrice}
+                        <button className="pay-btn" onClick={handlePayClick} disabled={locking}>
+                            {locking ? 'Locking...' : `Pay ₹${totalPrice}`}
                         </button>
                     </div>
                 )

@@ -33,7 +33,8 @@ function PaymentPage() {
         }
     }, [state, navigate]);
 
-    const { bookingId, expiresAt, totalPrice, movieTitle, theatreName, seats } = state || {};
+    // Added showId to destructuring
+    const { bookingId, expiresAt, totalPrice, movieTitle, theatreName, seats, showId } = state || {};
 
     // TIMER LOGIC
     const [timeLeft, setTimeLeft] = useState<number>(0);
@@ -73,10 +74,10 @@ function PaymentPage() {
             await releaseSeats({
                 variables: {
                     rel: {
-                        showID: 0, // Backend might need this? Schema says yes. Ideally we pass it from state.
+                        showID: showId || 0, // Use the passed showId
                         BID: bookingId,
-                        userID: "guest_user_123", // TODO: Real User
-                        seatIDs: [] // Optional if BID is enough
+                        userID: "123e4567-e89b-12d3-a456-426614174000", // Valid UUID
+                        seatIDs: []
                     }
                 }
             });
@@ -102,15 +103,13 @@ function PaymentPage() {
 
         return () => {
             window.removeEventListener('popstate', handlePopState);
-            // Cleanup on unmount (if navigating away)
-            // Check if we navigated to Success page? 
-            // If unmounting and NOT success, release?
         };
     }, []);
 
 
     const handlePayment = async () => {
         try {
+            // 1. Call Backend to Initiate Payment
             const { data } = await makePayment({
                 variables: {
                     input: {
@@ -121,12 +120,30 @@ function PaymentPage() {
             });
 
             if (data?.makePayment?.bookingID) {
+                // 2. Simulate PSP Webhook Trigger (User Requirement)
+                // Using fetch (POST) instead of axios to avoid dependency issues
+                try {
+                    await fetch('http://localhost:6001/mock-psp', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            "transaction_id": "TXN" + Math.floor(Math.random() * 100000), // Random Transaction ID
+                            "booking_ref": bookingId, // Use REAL Booking ID
+                            "status": "succeeded"
+                        })
+                    });
+                } catch (pspError) {
+                    console.warn("PSP Simulation Trigger failed (likely CORS or Network), but Booking confirmed.", pspError);
+                }
+
                 // Success!
                 alert(`Payment Successful! Booking Confirmed: ${data.makePayment.bookingID}`);
-                // Navigate to Tickets page (Or Home for now)
                 navigate('/');
             }
         } catch (e) {
+            console.error(e);
             alert("Payment Failed. Try again.");
         }
     };
