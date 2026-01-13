@@ -243,74 +243,78 @@ function SeatSelection() {
                 {/* Categories with Prices */}
                 {categories.map((cat: any) => (
                     <div key={cat.catId} className="category-section">
-                        <div className="category-header">
-                            Rs. {cat.price} {cat.name}
-                        </div>
-
-                        <div className="grid-with-labels">
-                            {/* Left Row Labels */}
-                            <div className="row-labels-col">
-                                {cat.rowLabels.map((label: string, idx: number) => (
-                                    <div key={idx} className="row-label-cell">
-                                        {label}
-                                    </div>
-                                ))}
+                        <div key={cat.catId} className="category-section">
+                            <div className="category-header">
+                                {/* Exact BMS Format: ₹190 PLATINUM */}
+                                ₹{cat.price} {cat.name}
                             </div>
 
-                            {/* The Grid */}
-                            <div className="seats-grid" style={{
-                                gridTemplateColumns: `repeat(${cat.columns}, 1fr)`
-                            }}>
-                                {cat.grid.map((row: RenderSeat[], rIndex: number) => (
-                                    row.map((seat: RenderSeat, cIndex: number) => (
-                                        <div
-                                            key={`${rIndex}-${cIndex}`}
-                                            className="seat-container"
-                                        >
-                                            <div
-                                                className={`seat-cell ${seat.status} type-${seat.type}`}
-                                                onClick={() => handleSeatClick(seat)}
-                                                title={seat.price > 0 ? `Rs. ${seat.price} | ${seat.id}` : seat.id}
-                                            >
-                                                {/* Only show number if not booked */}
-                                                {seat.status !== 'gap' && seat.status !== 'booked' && (
-                                                    <span className="seat-num">{seat.id.replace(/[A-Z]/g, '')}</span>
-                                                )}
-                                            </div>
+                            <div className="grid-with-labels">
+                                {/* Left Row Labels */}
+                                <div className="row-labels-col">
+                                    {cat.rowLabels.map((label: string, idx: number) => (
+                                        <div key={idx} className="row-label-cell">
+                                            {label}
                                         </div>
-                                    ))
-                                ))}
+                                    ))}
+                                </div>
+
+                                {/* The Grid */}
+                                <div className="seats-grid" style={{
+                                    gridTemplateColumns: `repeat(${cat.columns}, 1fr)`
+                                }}>
+                                    {cat.grid.map((row: RenderSeat[], rIndex: number) => (
+                                        row.map((seat: RenderSeat, cIndex: number) => (
+                                            <div
+                                                key={`${rIndex}-${cIndex}`}
+                                                className="seat-container"
+                                            >
+                                                <div
+                                                    className={`seat-cell ${seat.status} type-${seat.type}`}
+                                                    onClick={() => handleSeatClick(seat)}
+                                                    title={seat.price > 0 ? `Rs. ${seat.price} | ${seat.id}` : seat.id}
+                                                >
+                                                    {/* Only show number if not booked */}
+                                                    {seat.status !== 'gap' && seat.status !== 'booked' && (
+                                                        <span className="seat-num">{seat.id.replace(/[A-Z]/g, '')}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
                 ))}
 
-                <div className="screen-direction">
-                    <div className="screen-svg-container">
-                        <svg viewBox="0 0 100 20" preserveAspectRatio="none">
-                            <path d="M0 20 Q 50 0 100 20" fill="#dce4ed" opacity="0.6" />
-                        </svg>
+                        <div className="screen-direction">
+                            <div className="screen-svg-container">
+                                <svg viewBox="0 0 100 20" preserveAspectRatio="none">
+                                    <path d="M0 20 Q 50 0 100 20" fill="#dce4ed" opacity="0.6" />
+                                </svg>
+                            </div>
+                            <p>All eyes this way please!</p>
+                        </div>
+
+                        <div className="seat-legend">
+                            <div className="legend-item"><span className="legend-box available"></span> Available</div>
+                            <div className="legend-item"><span className="legend-box selected"></span> Selected</div>
+                            <div className="legend-item"><span className="legend-box sold"></span> Sold</div>
+                        </div>
                     </div>
-                    <p>All eyes this way please!</p>
-                </div>
 
-                <div className="seat-legend">
-                    <div className="legend-item"><span className="legend-box available"></span> Available</div>
-                    <div className="legend-item"><span className="legend-box selected"></span> Selected</div>
-                    <div className="legend-item"><span className="legend-box sold"></span> Sold</div>
-                </div>
-            </div>
-
-            {/* Footer */}
-            {selectedSeats.length > 0 && (
-                <div className="pay-footer">
-                    <button className="pay-btn" onClick={() => navigate('/payment')}>
-                        Pay Rs. {totalPrice}
-                    </button>
-                </div>
-            )}
+            {/* Footer */ }
+            {
+                        selectedSeats.length > 0 && (
+                            <div className="pay-footer">
+                                <button className="pay-btn" onClick={() => navigate('/payment')}>
+                                    Pay ₹{totalPrice}
+                                </button>
+                            </div>
+                        )
+                    }
         </div>
-    );
+            );
 }
 
-export default SeatSelection;
+            export default SeatSelection;

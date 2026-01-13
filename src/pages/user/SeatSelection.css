@@ -179,31 +179,33 @@
     user-select: none;
 }
 
-/* Available: Hollow Green - UNIFORM FOR ALL TYPES */
+/* Available: Hollow Green (Strict) */
 .seat-cell.available {
-    background: white;
-    border: 1px solid #2dc492;
+    background-color: white !important;
+    border: 1px solid #2dc492 !important;
     color: #2dc492;
     font-weight: 500;
 }
 
 .seat-cell.available:hover {
-    background: #2dc492;
-    color: white;
+    background-color: #2dc492 !important;
+    color: white !important;
 }
 
-/* Booked: Solid Grey Square */
+/* Booked: Solid Grey Square (Strict) */
 .seat-cell.booked {
-    background: #d8d8d8;
-    border: none;
+    background-color: #d8d8d8 !important;
+    border: 1px solid #d8d8d8 !important;
     color: transparent;
+    cursor: not-allowed;
 }
 
-/* Selected: Solid Green */
+/* Selected: Solid Green (Strict) */
 .seat-cell.selected {
-    background: #2dc492;
-    border: 1px solid #2dc492;
-    color: white;
+    background-color: #2dc492 !important;
+    border: 1px solid #2dc492 !important;
+    color: white !important;
+    box-shadow: 0 0 5px rgba(45, 196, 146, 0.4);
 }
 
 /* Gap */
