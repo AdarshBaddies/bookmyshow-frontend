@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation, gql } from '@apollo/client';
 import { GET_SCREEN, GET_AVAILABLE_SEATS, GET_SHOWS } from '../../graphql/queries';
 import { useUserStore } from '../../store/userStore';
 import './SeatSelection.css';
@@ -177,7 +177,8 @@ function SeatSelection() {
                     // If backend uses "A1" for both categories, this mismatch is the root cause.
                     // By generating "G1" for the second category, we hope availabilityData has "G1".
                     const availStatus = statusMap.get(generatedId);
-                    const isBooked = availStatus === 0;
+                    // 0 = Booked, 1 = Available, 2 = Locked
+                    const isBooked = availStatus === 0 || availStatus === 2;
 
                     const isSelected = selectedSeats.includes(uniqueId);
 
