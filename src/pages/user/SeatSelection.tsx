@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { GET_SCREEN, GET_AVAILABLE_SEATS, GET_SHOWS } from '../../graphql/queries';
 import { useUserStore } from '../../store/userStore';
@@ -13,24 +13,40 @@ interface RenderSeat {
     status: 'available' | 'booked' | 'selected' | 'gap';
     price: number;
     categoryName: string;
+    catId: number; // For connection validation
 }
 
 function SeatSelection() {
     const { movieId, showId } = useParams();
     const navigate = useNavigate();
     const { state } = useLocation();
+    const [searchParams] = useSearchParams();
     const userStoreLocation = useUserStore((s) => s.location);
 
-    // Metadata from previous page
+    // Metadata Priority: URL Param > State > Fallback
+    const urlDate = searchParams.get('date');
+    const urlTheatreId = searchParams.get('theatreId');
+
+    const passedDate = urlDate || state?.date;
+
+    // Fallback logic for date if absolutely nothing found
+    const effectiveDate = useMemo(() => {
+        if (passedDate) return passedDate;
+        const d = new Date();
+        const year = String(d.getFullYear());
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}${month}${day}`;
+    }, [passedDate]);
+
     const {
-        theatreId,
         theatreName: passedTheatreName,
-        date: passedDate,
         movieTitle: passedMovieTitle,
         layoutId: passedLayoutId
     } = state || {};
 
     const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
     // 1. Fetch Shows for Time Slider & Details
     const { data: showsData, loading: loadingShows } = useQuery(GET_SHOWS, {
@@ -41,7 +57,7 @@ function SeatSelection() {
                 radius: userStoreLocation?.radius || 50,
                 movieId: movieId
             },
-            d: passedDate || '20251122' // Fallback for dev
+            d: effectiveDate
         },
         skip: !movieId
     });
@@ -50,13 +66,17 @@ function SeatSelection() {
     const { currentShow, siblings, theatreName } = useMemo(() => {
         if (!showsData?.getShows) return { currentShow: null, siblings: [], theatreName: passedTheatreName };
 
-        // Find relevant theatre group
         let theatreGroup;
-        if (theatreId) {
-            theatreGroup = showsData.getShows.find((t: any) => t.TID === theatreId);
-        } else {
-            // Fallback search by showId
-            theatreGroup = showsData.getShows.find((t: any) => t.SHS?.some((s: any) => String(s.showId) === String(showId)));
+        const targetTID = urlTheatreId || state?.theatreId;
+
+        if (targetTID) {
+            theatreGroup = showsData.getShows.find((t: any) => t.TID === targetTID);
+        }
+
+        if (!theatreGroup) {
+            theatreGroup = showsData.getShows.find((t: any) =>
+                t.SHS?.some((s: any) => String(s.showId) === String(showId))
+            );
         }
 
         if (!theatreGroup) return { currentShow: null, siblings: [], theatreName: passedTheatreName };
@@ -68,7 +88,7 @@ function SeatSelection() {
             siblings: theatreGroup.SHS || [],
             theatreName: theatreGroup.TN
         };
-    }, [showsData, theatreId, showId, passedTheatreName]);
+    }, [showsData, urlTheatreId, state, showId, passedTheatreName]);
 
 
     // 3. Layout Fetch
@@ -129,7 +149,8 @@ function SeatSelection() {
                             type: 0,
                             status: 'gap',
                             price: 0,
-                            categoryName: cat.name
+                            categoryName: cat.name,
+                            catId: cat.catId
                         });
                         continue;
                     }
@@ -153,7 +174,8 @@ function SeatSelection() {
                         type: seatData.type,
                         status: isBooked ? 'booked' : (isSelected ? 'selected' : 'available'),
                         price: price,
-                        categoryName: cat.name
+                        categoryName: cat.name,
+                        catId: cat.catId
                     });
                 }
                 grid.push(rowSeats);
@@ -168,16 +190,35 @@ function SeatSelection() {
     // Handlers
     const handleSeatClick = (seat: RenderSeat) => {
         if (seat.status === 'booked' || seat.status === 'gap') return;
+        if (!seat.uniqueId) return;
 
-        // Use uniqueId for logic
+        // Check if switching category
+        if (selectedCategory !== null && selectedCategory !== seat.catId && selectedSeats.length > 0) {
+            // User is picking a seat in a NEW category.
+            // Clear previous selections and start fresh with this new seat.
+            setSelectedCategory(seat.catId);
+            setSelectedSeats([seat.uniqueId]);
+            return;
+        }
+
         if (selectedSeats.includes(seat.uniqueId)) {
-            setSelectedSeats(prev => prev.filter(id => id !== seat.uniqueId));
+            // Deselecting...
+            const newSelection = selectedSeats.filter(id => id !== seat.uniqueId);
+            setSelectedSeats(newSelection);
+            if (newSelection.length === 0) {
+                setSelectedCategory(null); // Reset category if all deselected
+            }
         } else {
+            // Selecting...
             if (selectedSeats.length >= 10) {
                 alert("You can only select up to 10 seats.");
                 return;
             }
-            setSelectedSeats(prev => [...prev, seat.uniqueId]);
+            // First seat selected? Set category
+            if (selectedSeats.length === 0) {
+                setSelectedCategory(seat.catId);
+            }
+            setSelectedSeats(prev => [...prev, seat.uniqueId!]);
         }
     };
 
