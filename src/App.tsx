@@ -11,6 +11,7 @@ import MovieAdminLayout from './layouts/MovieAdminLayout';
 import HomePage from './pages/user/HomePage';
 import MovieDetails from './pages/user/MovieDetails';
 import ShowSelection from './pages/user/ShowSelection';
+import SeatSelection from './pages/user/SeatSelection';
 
 // Theatre Admin Pages
 import TheatreAdminDashboard from './pages/theatre-admin/TheatreAdminDashboard';
@@ -42,6 +43,7 @@ function App() {
                         <Route index element={<HomePage />} />
                         <Route path="movie/:movieId" element={<MovieDetails />} />
                         <Route path="book/:movieId" element={<ShowSelection />} />
+                        <Route path="buy/:movieId/:showId" element={<SeatSelection />} />
                     </Route>
 
                     {/* Theatre Admin Portal */}
