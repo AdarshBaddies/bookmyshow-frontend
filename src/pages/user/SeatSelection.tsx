@@ -119,13 +119,15 @@ function SeatSelection() {
         }
 
         const getPrice = (catId: number) => {
-            // Check if currentShow has pricing for this category
             if (currentShow?.categoryDetails) {
                 const catDet = currentShow.categoryDetails.find((c: any) => c.categoryId === catId);
                 if (catDet) return catDet.price;
             }
             return 0;
         };
+
+        // Global Row Counter for continuous labeling (A, B, C...)
+        let globalRowIndex = 0;
 
         return screenData.getScreen.categories.map((cat: any) => {
             const price = getPrice(cat.catId);
@@ -135,14 +137,19 @@ function SeatSelection() {
             let seatIndex = 0;
             for (let r = 0; r < cat.rows; r++) {
                 const rowSeats: RenderSeat[] = [];
-                let rowLabel = '';
+
+                // Generate Row Label (A=0, B=1, ... AA=26)
+                const label = globalRowIndex >= 26
+                    ? String.fromCharCode(65 + Math.floor(globalRowIndex / 26) - 1) + String.fromCharCode(65 + (globalRowIndex % 26))
+                    : String.fromCharCode(65 + globalRowIndex);
+
+                globalRowIndex++; // Increment for next row
 
                 for (let c = 0; c < cat.columns; c++) {
                     const seatData = cat.seats[seatIndex];
                     seatIndex++;
 
                     if (!seatData || seatData.type === 0) {
-                        // Use a guaranteed unique key for gaps too to avoid key warnings
                         rowSeats.push({
                             id: `gap-${cat.catId}-${r}-${c}`,
                             uniqueId: `gap-${cat.catId}-${r}-${c}`,
@@ -155,22 +162,28 @@ function SeatSelection() {
                         continue;
                     }
 
-                    if (!rowLabel && seatData.seatId) {
-                        const match = seatData.seatId.match(/[A-Z]+/);
-                        if (match) rowLabel = match[0];
+                    // Infer Seat Number from original ID (e.g. "A5" -> "5") or just use column index + 1
+                    let seatNum = String(c + 1);
+                    if (seatData.seatId) {
+                        const match = seatData.seatId.match(/\d+/);
+                        if (match) seatNum = match[0];
                     }
 
-                    const availStatus = statusMap.get(seatData.seatId);
-                    // 0 = Booked, 1 = Available (Assuming)
+                    // Construct NEW Continuous ID
+                    const generatedId = `${label}${seatNum}`;
+                    const uniqueId = `${cat.catId}_${generatedId}`;
+
+                    // Check Status using GENERATED ID (Assuming backend uses continuous IDs A1..Z1)
+                    // If backend uses "A1" for both categories, this mismatch is the root cause.
+                    // By generating "G1" for the second category, we hope availabilityData has "G1".
+                    const availStatus = statusMap.get(generatedId);
                     const isBooked = availStatus === 0;
 
-                    // Create Composite Unique ID to avoid collisions across categories
-                    const uniqueId = `${cat.catId}_${seatData.seatId}`;
                     const isSelected = selectedSeats.includes(uniqueId);
 
                     rowSeats.push({
-                        id: seatData.seatId,
-                        uniqueId: uniqueId, // Internal tracking key
+                        id: generatedId, // Display ID
+                        uniqueId: uniqueId, // Internal tracking
                         type: seatData.type,
                         status: isBooked ? 'booked' : (isSelected ? 'selected' : 'available'),
                         price: price,
@@ -179,7 +192,7 @@ function SeatSelection() {
                     });
                 }
                 grid.push(rowSeats);
-                rowLabels.push(rowLabel);
+                rowLabels.push(label);
             }
 
             return { ...cat, grid, price, rowLabels };
