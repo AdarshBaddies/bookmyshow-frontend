@@ -83,10 +83,18 @@ function ShowSelection() {
         return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     };
 
-    const handleTimeClick = (showId: number, screenId: string, layoutId: string) => {
+    const handleTimeClick = (show: any, theatre: any) => {
         // Construct booking object (or just pass IDs)
-        navigate(`/buy/${movieId}/${showId}`, {
-            state: { screenId, layoutId } // Pass extra context if needed
+        // We pass state for smooth transition, but URL query params for robustness (refresh)
+        navigate(`/buy/${movieId}/${show.showId}?date=${selectedDate}&theatreId=${theatre.TID}`, {
+            state: {
+                screenId: show.screenId,
+                layoutId: show.layoutId,
+                theatreId: theatre.TID,
+                theatreName: theatre.TN,
+                date: selectedDate,
+                movieTitle: movie?.title
+            }
         });
     };
 
@@ -187,7 +195,7 @@ function ShowSelection() {
                                     <div key={show.showId} className="time-slot-wrapper">
                                         <button
                                             className="time-btn"
-                                            onClick={() => handleTimeClick(show.showId, show.screenId, show.layoutId)}
+                                            onClick={() => handleTimeClick(show, theatre)}
                                         >
                                             {formatTime(show.showTime)}
                                         </button>

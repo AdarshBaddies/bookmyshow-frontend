@@ -20,7 +20,7 @@ function SeatSelection() {
     const { state } = useLocation();
     const userStoreLocation = useUserStore((s) => s.location);
 
-    // Metadata from previous page (Passed Context)
+    // Metadata from previous page
     const {
         theatreId,
         theatreName: passedTheatreName,
@@ -29,35 +29,32 @@ function SeatSelection() {
         layoutId: passedLayoutId
     } = state || {};
 
-    // State
     const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
 
-    // 1. CRITICAL: Fetch All Shows for this Movie+Date (To build Time Slider)
-    // We use the passed date to get all shows for this movie on this day.
+    // 1. Fetch Shows for Time Slider & Details
     const { data: showsData, loading: loadingShows } = useQuery(GET_SHOWS, {
         variables: {
             user: {
-                lat: userStoreLocation?.lat || 19.1197, // Fallback if store empty
+                lat: userStoreLocation?.lat || 19.1197,
                 lon: userStoreLocation?.lon || 72.8424,
                 radius: userStoreLocation?.radius || 50,
                 movieId: movieId
             },
-            d: passedDate || '20251122' // Fallback date for dev testing
+            d: passedDate || '20251122' // Fallback for dev
         },
         skip: !movieId
     });
 
-    // 2. Extract Sibling Shows (Time Slider) & Current Show Details
+    // 2. Derive Current Context
     const { currentShow, siblings, theatreName } = useMemo(() => {
         if (!showsData?.getShows) return { currentShow: null, siblings: [], theatreName: passedTheatreName };
 
-        // We need to filter for the specific theatre we are currently in.
-        // If theatreId is passed, use it. If not, try to find the theatre containing the current showID.
+        // Find relevant theatre group
         let theatreGroup;
         if (theatreId) {
             theatreGroup = showsData.getShows.find((t: any) => t.TID === theatreId);
         } else {
-            // Fallback: Find any theatre that has this showId
+            // Fallback search by showId
             theatreGroup = showsData.getShows.find((t: any) => t.SHS?.some((s: any) => String(s.showId) === String(showId)));
         }
 
@@ -67,32 +64,29 @@ function SeatSelection() {
 
         return {
             currentShow: show,
-            siblings: theatreGroup.SHS || [], // These are the shows for the Time Slider
+            siblings: theatreGroup.SHS || [],
             theatreName: theatreGroup.TN
         };
     }, [showsData, theatreId, showId, passedTheatreName]);
 
 
-    // 3. Fetch Screen Layout
+    // 3. Layout Fetch
     const effectiveLayoutId = currentShow?.layoutId || passedLayoutId;
-
     const { data: screenData, loading: loadingScreen } = useQuery(GET_SCREEN, {
         variables: { layoutId: effectiveLayoutId || '' },
         skip: !effectiveLayoutId
     });
 
-    // 4. Fetch Real-time Availability
+    // 4. Availability Fetch
     const { data: availabilityData, startPolling } = useQuery(GET_AVAILABLE_SEATS, {
         variables: { show_id: parseInt(showId || '0') },
         skip: !showId
     });
 
-    useEffect(() => {
-        startPolling(5000);
-    }, [startPolling]);
+    useEffect(() => { startPolling(5000); }, [startPolling]);
 
 
-    // --- Logic to Merge Layout + Availability + Prices ---
+    // --- Merge Logic ---
     const categories = useMemo(() => {
         if (!screenData?.getScreen?.categories) return [];
 
@@ -103,13 +97,13 @@ function SeatSelection() {
             });
         }
 
-        // Helper to find price using match on catId
         const getPrice = (catId: number) => {
+            // Check if currentShow has pricing for this category
             if (currentShow?.categoryDetails) {
                 const catDet = currentShow.categoryDetails.find((c: any) => c.categoryId === catId);
                 if (catDet) return catDet.price;
             }
-            return 0; // Default if not found
+            return 0;
         };
 
         return screenData.getScreen.categories.map((cat: any) => {
@@ -131,18 +125,13 @@ function SeatSelection() {
                         continue;
                     }
 
-                    // Determine Row Label (A, B, C...) from the first actual valid seat in the row
                     if (!rowLabel && seatData.seatId) {
-                        const match = seatData.seatId.match(/[A-Z]+/); // Extract "A" from "A1"
+                        const match = seatData.seatId.match(/[A-Z]+/);
                         if (match) rowLabel = match[0];
                     }
 
-                    // Check availability: 0 = Booked, 1 = Available/Free
-                    // NOTE: BMS usually treats '1' as Available. 
-                    // Let's assume API follows: 0=Booked, 1=Available.
                     const availStatus = statusMap.get(seatData.seatId);
-
-                    // If availStatus is undefined, we assume available (for now) unless explicitly 0
+                    // 0 = Booked, 1 = Available (Assuming)
                     const isBooked = availStatus === 0;
                     const isSelected = selectedSeats.includes(seatData.seatId);
 
@@ -155,7 +144,7 @@ function SeatSelection() {
                     });
                 }
                 grid.push(rowSeats);
-                rowLabels.push(rowLabel); // Push label for this row
+                rowLabels.push(rowLabel);
             }
 
             return { ...cat, grid, price, rowLabels };
@@ -185,7 +174,6 @@ function SeatSelection() {
     };
 
     const handleTimeChange = (newShow: any) => {
-        // Switch to new show by navigating
         navigate(`/buy/${movieId}/${newShow.showId}`, {
             state: {
                 ...state,
@@ -240,7 +228,6 @@ function SeatSelection() {
                                 </button>
                             ))
                         ) : (
-                            // If no siblings loaded yet, show at least the current one or a loader
                             <div className="time-chip active">
                                 <span className="time-text">Loading...</span>
                             </div>
@@ -256,7 +243,6 @@ function SeatSelection() {
                 {/* Categories with Prices */}
                 {categories.map((cat: any) => (
                     <div key={cat.catId} className="category-section">
-                        {/* Price Separator */}
                         <div className="category-header">
                             Rs. {cat.price} {cat.name}
                         </div>
@@ -284,10 +270,9 @@ function SeatSelection() {
                                             <div
                                                 className={`seat-cell ${seat.status} type-${seat.type}`}
                                                 onClick={() => handleSeatClick(seat)}
-                                                // tooltip
                                                 title={seat.price > 0 ? `Rs. ${seat.price} | ${seat.id}` : seat.id}
                                             >
-                                                {/* Logic to hide text if booked or gap */}
+                                                {/* Only show number if not booked */}
                                                 {seat.status !== 'gap' && seat.status !== 'booked' && (
                                                     <span className="seat-num">{seat.id.replace(/[A-Z]/g, '')}</span>
                                                 )}
