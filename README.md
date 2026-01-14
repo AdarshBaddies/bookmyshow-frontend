@@ -27,7 +27,7 @@ The user portal prioritizes ease of use with proximity-based movie discovery and
 
 
 ![Movie Details](screenshots/user/movie_page.png)
-*Real-time seat mapping and selection*
+*movie details*
 
 
 ![Show Selection](screenshots/user/shows_page.png)
