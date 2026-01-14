@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, gql } from '@apollo/client';
 import { GET_SCREEN, GET_SEATS, GET_SHOWS } from '../../graphql/queries';
@@ -99,12 +99,10 @@ function SeatSelection() {
     });
 
     // 4. Availability Fetch
-    const { data: availabilityData, startPolling } = useQuery(GET_SEATS, {
+    const { data: availabilityData } = useQuery(GET_SEATS, {
         variables: { id: showId || '' },
         skip: !showId
     });
-
-    useEffect(() => { startPolling(5000); }, [startPolling]);
 
 
     // --- Merge Logic ---
