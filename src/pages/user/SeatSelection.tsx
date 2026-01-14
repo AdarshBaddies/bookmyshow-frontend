@@ -272,6 +272,7 @@ function SeatSelection() {
                         movieTitle: passedMovieTitle,
                         theatreName: theatreName,
                         seats: pureSeatIds.join(', '),
+                        seatIDs: pureSeatIds, // Pass the array for release logic
                         showId: parseInt(showId || '0')
                     }
                 });

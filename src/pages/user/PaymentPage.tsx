@@ -77,7 +77,7 @@ function PaymentPage() {
                         showID: showId || 0, // Use the passed showId
                         BID: bookingId,
                         userID: "123e4567-e89b-12d3-a456-426614174000", // Valid UUID
-                        seatIDs: []
+                        seatIDs: state?.seatIDs || []
                     }
                 }
             });
