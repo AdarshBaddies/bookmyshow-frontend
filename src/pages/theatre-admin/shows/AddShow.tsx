@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useMutation, useLazyQuery, useQuery } from '@apollo/client';
+import { useMutation, useLazyQuery } from '@apollo/client';
 import { ADD_SHOW } from '../../../graphql/mutations';
-import { GET_SCREENS, GET_MOVIES, FETCH_THEATRE, GET_SCREEN, GET_MOVIE } from '../../../graphql/queries';
+import { GET_SCREENS, FETCH_THEATRE, GET_SCREEN, GET_MOVIE } from '../../../graphql/queries';
 import { useNavigate } from 'react-router-dom';
 import './AddShow.css';
 
@@ -26,19 +26,13 @@ function AddShow() {
     const [getScreens] = useLazyQuery(GET_SCREENS);
     const [fetchTheatre] = useLazyQuery(FETCH_THEATRE);
     const [getScreen] = useLazyQuery(GET_SCREEN);
-    const [getMovie, { data: movieDetailData }] = useLazyQuery(GET_MOVIE);
-
-    // Fetch Movies for dropdown
-    const { data: moviesData } = useQuery(GET_MOVIES, {
-        variables: {
-            user: { lat: 0, lon: 0, radius: 10000, movieId: "" } // Global fetch
-        }
-    });
+    const [getMovie, { data: movieDetailData, loading: loadingMovie }] = useLazyQuery(GET_MOVIE);
 
     const [globalInfo, setGlobalInfo] = useState({
         theatreId: '',
         theatreName: '',
         movieId: '',
+        movieTitle: '',
         date: '',
     });
 
@@ -48,10 +42,18 @@ function AddShow() {
 
     const [availableScreens, setAvailableScreens] = useState<any[]>([]);
 
-    const handleMovieChange = (movieId: string) => {
-        setGlobalInfo(prev => ({ ...prev, movieId }));
-        if (movieId) {
-            getMovie({ variables: { id: movieId } });
+    const handleMovieBlur = async () => {
+        if (!globalInfo.movieId) return;
+        try {
+            const { data } = await getMovie({ variables: { id: globalInfo.movieId } });
+            if (data?.movie) {
+                setGlobalInfo(prev => ({ ...prev, movieTitle: data.movie.title }));
+            } else {
+                setGlobalInfo(prev => ({ ...prev, movieTitle: "Movie not found" }));
+            }
+        } catch (err) {
+            console.error("Movie fetch failed:", err);
+            setGlobalInfo(prev => ({ ...prev, movieTitle: "Error fetching movie" }));
         }
     };
 
@@ -208,19 +210,24 @@ function AddShow() {
                             />
                             {globalInfo.theatreName && <div className="theatre-meta">Theatre: <strong>{globalInfo.theatreName}</strong></div>}
                         </div>
+
                         <div className="form-row">
                             <div className="form-group">
-                                <label>Select Movie *</label>
-                                <select
+                                <label>Movie ID *</label>
+                                <input
+                                    type="text"
                                     value={globalInfo.movieId}
-                                    onChange={e => handleMovieChange(e.target.value)}
+                                    onChange={e => setGlobalInfo({ ...globalInfo, movieId: e.target.value, movieTitle: '' })}
+                                    onBlur={handleMovieBlur}
+                                    placeholder="Enter Movie ID"
                                     required
-                                >
-                                    <option value="">-- Choose Movie --</option>
-                                    {moviesData?.getMovies?.map((m: any) => (
-                                        <option key={m.movieId} value={m.movieId}>{m.title}</option>
-                                    ))}
-                                </select>
+                                />
+                                {globalInfo.movieTitle && (
+                                    <div className={`theatre-meta ${globalInfo.movieTitle.includes('not found') ? 'error' : ''}`}>
+                                        Confirmed: <strong>{globalInfo.movieTitle}</strong>
+                                    </div>
+                                )}
+                                {loadingMovie && <div className="theatre-meta">Fetching details...</div>}
                             </div>
                             <div className="form-group">
                                 <label>Date *</label>
@@ -327,9 +334,9 @@ function AddShow() {
                     <button type="submit" className="btn-submit" disabled={creating}>
                         {creating ? 'Processing Batch...' : `Create ${showSlots.length} Show(s)`}
                     </button>
-                </form>
-            </div>
-        </div>
+                </form >
+            </div >
+        </div >
     );
 }
 
