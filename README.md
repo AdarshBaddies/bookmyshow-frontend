@@ -1,148 +1,58 @@
-# 🎬 BookMyShow Frontend
+# 🎬 BookMyShow: End-to-End Cinema Management & Booking System
 
-A modern, premium movie ticket booking platform inspired by BookMyShow, built with React, TypeScript, and GraphQL.
+A robust, enterprise-grade movie ticket booking platform engineered with a microservices-based architecture. This system manages the complete lifecycle of movie discovery, theatre operations, real-time seat orchestration, and secure payment processing.
 
-## 🚀 Quick Start
+## 🏗️ System Architecture
+
+The project is built on a high-availability backend architecture that leverages multiple technologies for performance and consistency:
+
+- **GraphQL Gateway**: A centralized API entry point that orchestrates requests to various internal microservices.
+- **Microservices Layer**: Distributed services (Theatre, Movie, Booking, Payment, User) communicating via **gRPC** for low-latency inter-service calls.
+- **In-Memory Orchestration**: **Redis** is utilized for real-time seat locking, caching show dates, and managing concurrent user sessions to prevent double-bookings.
+- **Persistence**: **MongoDB** serves as the primary data store for movie metadata, theatre layouts, and booking history.
+- **Assets**: CDN-backed asset management for high-performance delivery of movie banners and visuals.
+
+## ⚙️ Core Backend Services
+
+### 📡 Gateway & Inter-Service
+- **GraphQL API**: Handles complex nested queries and mutations for both cinema-goers and theatre administrators.
+- **gRPC Infrastructure**: Ensures type-safe, high-speed communication between the Theatre service and the Gateway.
+
+### 🎥 Cinema & Content Management
+- **Movie Service**: Manages movie lifecycles, metadata (genres, certification, cast), and multi-language support.
+- **Theatre Service**: Handles theatre registrations, screen configurations, and seat layout definitions.
+- **Show Service**: Orchestrates batch show creation, timing management, and dynamic pricing models per category.
+
+### 🎟️ Booking & Real-Time Orchestration
+- **Concurrent Booking Engine**: Leverages Redis atomic operations to manage seat availability and perform millisecond-latency locks.
+- **Seat Availability Mapping**: Provides real-time visual feedback on seat statuses (Available, Locked, Booked).
+- **Graceful Releases**: Automatically handles TTL-based seat releases if payments are not completed.
+
+### 💳 Transactional Services
+- **Payment Service**: Securely manages transaction sessions, processing webhooks from payment service providers (PSPs) and updating booking states upon success.
+- **User Service**: Manages secure authentication for registered users and guest checkout flows.
+
+## 🔄 Technical Flow
+
+The system follows a strict operational path to ensure data integrity:
+1. **Discovery**: GraphQL fetches movies and filtered shows using proximity-based location logic.
+2. **Locking**: Upon seat selection, the **Booking Service** creates a temporary lock in Redis.
+3. **Validation**: The **Payment Service** initiates a session; successful webhooks trigger a gRPC call to confirm the booking in the persistent database.
+4. **Notification**: Post-confirmation, the service triggers notification protocols (Email/SMS) for the end-user.
+
+## 🚀 Environment Setup
 
 ### Prerequisites
-- Node.js 18+ installed
-- Your GraphQL backend running on `http://localhost:8080`
+- Node.js 18+
+- Go/Python/Node (Backend Services)
+- Redis Server
+- MongoDB Instance
 
-### Installation
-
+### Quick Start (Frontend)
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
 
-The app will be available at **http://localhost:5173**
-
-## 📁 Project Structure
-
-```
-frontend/
-├── src/
-│   ├── graphql/          # Apollo Client & GraphQL queries/mutations
-│   ├── pages/            # Page components
-│   │   ├── Home.tsx           # Landing page
-│   │   └── TestEndpoint.tsx   # GraphQL endpoint tester
-│   ├── styles/           # Global CSS & design system
-│   ├── App.tsx           # Root component with routing
-│   └── main.tsx          # Entry point
-├── package.json
-├── vite.config.ts        # Vite configuration
-└── tsconfig.json         # TypeScript configuration
-```
-
-## 🧪 Testing Your Backend
-
-1. Start your GraphQL server on port 8080
-2. Run the frontend: `npm run dev`
-3. Open browser: http://localhost:5173
-4. Click **"Test GraphQL Endpoint"**
-5. Test the following queries:
-   - **getShowDates**: Get available dates for a movie
-   - **getShows**: Get shows by location and date
-
-### Sample Test Data
-
-Use these values in the endpoint tester:
-
-- **Location ID**: `MUM1`
-- **Movie ID**: `MV001_MOVIE`
-- **Longitude**: `72.8424`
-- **Latitude**: `19.1197`
-- **Radius**: `10` km
-- **Date**: `20251122` (YYYYMMDD format)
-
-## 🎨 Design System
-
-The app uses a BookMyShow-inspired dark theme with:
-- **Primary Color**: `#f84464` (Red)
-- **Secondary Color**: `#00d9ff` (Cyan)
-- **Background**: `#0f1014` (Dark)
-- **Font**: Inter (body), Poppins (headings)
-
-All design tokens are defined in `src/styles/index.css` as CSS variables.
-
-## 🔌 GraphQL Integration
-
-### Endpoint Configuration
-- **URL**: `http://localhost:8080/graphql`
-- **Client**: Apollo Client
-- **Config**: `src/graphql/client.ts`
-
-### Available Queries
-Located in `src/graphql/queries.ts`:
-- `GET_SHOW_DATES` - Get available dates
-- `GET_SHOWS` - Get shows by location
-- `GET_SCREEN` - Get screen layout
-- `GET_SEATS` - Get real-time seat availability
-- `GET_BOOKING_DETAILS` - Get booking info
-
-### Available Mutations
-Located in `src/graphql/mutations.ts`:
-- `LOCK_SEATS` - Lock seats for booking
-- `RELEASE_SEATS` - Release locked seats
-- `MAKE_PAYMENT` - Process payment
-
-## 🔧 Configuration
-
-### Vite Config (`vite.config.ts`)
-- **Dev Server Port**: 5173
-- **GraphQL Proxy**: Proxies `/graphql` to `http://localhost:8080`
-- **Path Alias**: `@/` maps to `src/`
-
-### TypeScript Config
-- **Strict Mode**: Enabled
-- **Target**: ES2020
-- **JSX**: react-jsx
-
-## 🐛 Troubleshooting
-
-### "Network error" when testing endpoint
-- Make sure your GraphQL server is running on port 8080
-- Check console for CORS errors
-- Verify your backend is accessible at `http://localhost:8080/graphql`
-
-### Port 5173 already in use
-```bash
-# Kill the process or change port in vite.config.ts
-```
-
-### Cannot find module errors
-```bash
-# Clear node_modules and reinstall
-rm -rf node_modules package-lock.json
-npm install
-```
-
-## 📝 Next Steps
-
-After verifying the endpoint works:
-1. ✅ Test GraphQL connection
-2. 🚧 Build show selection page
-3. 🚧 Build seat selection page
-4. 🚧 Implement payment flow
-5. 🚧 Add admin portal
-
-## 🛠️ Tech Stack
-
-- **Framework**: React 18
-- **Build Tool**: Vite
-- **Language**: TypeScript
-- **GraphQL Client**: Apollo Client
-- **Routing**: React Router v6
-- **State Management**: Zustand (planned)
-- **Styling**: Vanilla CSS with CSS Variables
-
-## 📄 License
-
-This project is part of the BookMyShow-inspired booking system.
-
 ---
-
-**Note**: Make sure your backend microservices (Theatre, Show, Booking, Payment) are running before testing the complete booking flow.
+*Note: This repository contains the professional frontend interface and coordination logic for the overall BookMyShow architecture.*

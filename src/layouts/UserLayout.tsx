@@ -1,32 +1,20 @@
-import { useState, useEffect } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
 import LocationModal from '../components/common/LocationModal';
 import './UserLayout.css';
 
 function UserLayout() {
-    const { location, setLocation } = useUserStore();
-    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-
-    // Open modal on first visit if no location set
-    useEffect(() => {
-        if (!location) {
-            setIsLocationModalOpen(true);
-        }
-    }, [location]);
-
-    // Handle initial default (fallback) if user closes modal without picking?
-    // For now, let's keep it simple. If they close, it stays null (or we could default to Mumbai).
+    const { location, isLocationModalOpen, setModalOpen } = useUserStore();
 
     const handleLocationClick = () => {
-        setIsLocationModalOpen(true);
+        setModalOpen(true);
     };
 
     return (
         <div className="user-layout">
             <LocationModal
                 isOpen={isLocationModalOpen}
-                onClose={() => setIsLocationModalOpen(false)}
+                onClose={() => setModalOpen(false)}
             />
 
             <header className="user-header">

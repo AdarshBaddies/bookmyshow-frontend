@@ -7,7 +7,14 @@ import './HomePage.css';
 
 function HomePage() {
     const navigate = useNavigate();
-    const { location } = useUserStore(); // Use global location
+    const { location, setModalOpen } = useUserStore(); // Use global location & modal control
+
+    // Open modal on first visit to home if no location set
+    useEffect(() => {
+        if (!location) {
+            setModalOpen(true);
+        }
+    }, [location, setModalOpen]);
 
     const [movies, setMovies] = useState<any[]>([]);
 
