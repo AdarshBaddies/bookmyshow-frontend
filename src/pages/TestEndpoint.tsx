@@ -7,7 +7,7 @@ import {
     GET_SCREENS,
     GET_SCREEN,
     GET_SHOWS_FOR_ADMIN,
-    GET_AVAILABLE_SEATS,
+    GET_SEATS,
     GET_BOOKINGS_FOR_SHOW,
 } from '../graphql/queries';
 import {
@@ -114,7 +114,7 @@ function TestEndpoint() {
     const [getAdminShows, { loading: adminShowsLoading, error: adminShowsError, data: adminShowsData }] =
         useLazyQuery(GET_SHOWS_FOR_ADMIN);
     const [getAvailableSeats, { loading: seatsLoading, error: seatsError, data: seatsData }] =
-        useLazyQuery(GET_AVAILABLE_SEATS);
+        useLazyQuery(GET_SEATS);
     const [getBookings, { loading: bookingsLoading, error: bookingsError, data: bookingsData }] =
         useLazyQuery(GET_BOOKINGS_FOR_SHOW);
 
@@ -387,10 +387,10 @@ function TestEndpoint() {
                 {activeTab === 'booking' && (
                     <div className="tab-content">
                         <div className="test-section">
-                            <h2>1. Get Available Seats</h2>
-                            <input type="number" value={showId} onChange={(e) => setShowId(parseInt(e.target.value))} placeholder="Show ID" />
-                            <button className="btn-test" onClick={() => getAvailableSeats({ variables: { show_id: showId } })} disabled={seatsLoading}>
-                                {seatsLoading ? 'Loading...' : 'Get Available Seats'}
+                            <h2>1. Get Seats Status</h2>
+                            <input value={showId} onChange={(e) => setShowId(Number(e.target.value))} placeholder="Show ID" />
+                            <button className="btn-test" onClick={() => getAvailableSeats({ variables: { id: String(showId) } })} disabled={seatsLoading}>
+                                {seatsLoading ? 'Loading...' : 'Get Seats'}
                             </button>
                             {seatsError && <div className="error-box"><strong>❌ Error:</strong><pre>{JSON.stringify(seatsError.message, null, 2)}</pre></div>}
                             {seatsData && <div className="success-box"><strong>✅ Success:</strong><pre>{JSON.stringify(seatsData, null, 2)}</pre></div>}

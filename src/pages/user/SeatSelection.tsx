@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, gql } from '@apollo/client';
-import { GET_SCREEN, GET_AVAILABLE_SEATS, GET_SHOWS } from '../../graphql/queries';
+import { GET_SCREEN, GET_SEATS, GET_SHOWS } from '../../graphql/queries';
 import { useUserStore } from '../../store/userStore';
 import './SeatSelection.css';
 
@@ -99,8 +99,8 @@ function SeatSelection() {
     });
 
     // 4. Availability Fetch
-    const { data: availabilityData, startPolling } = useQuery(GET_AVAILABLE_SEATS, {
-        variables: { show_id: parseInt(showId || '0') },
+    const { data: availabilityData, startPolling } = useQuery(GET_SEATS, {
+        variables: { id: showId || '' },
         skip: !showId
     });
 
@@ -111,10 +111,10 @@ function SeatSelection() {
     const categories = useMemo(() => {
         if (!screenData?.getScreen?.categories) return [];
 
-        const statusMap = new Map<string, number>();
-        if (availabilityData?.getAvailableSeats) {
-            availabilityData.getAvailableSeats.forEach((s: any) => {
-                statusMap.set(s.seatID, s.Status);
+        const statusMap = new Map<string, string>();
+        if (availabilityData?.getSeats) {
+            availabilityData.getSeats.forEach((s: any) => {
+                statusMap.set(s.id, s.Status);
             });
         }
 
@@ -173,12 +173,10 @@ function SeatSelection() {
                     const generatedId = `${label}${seatNum}`;
                     const uniqueId = `${cat.catId}_${generatedId}`;
 
-                    // Check Status using GENERATED ID (Assuming backend uses continuous IDs A1..Z1)
-                    // If backend uses "A1" for both categories, this mismatch is the root cause.
-                    // By generating "G1" for the second category, we hope availabilityData has "G1".
+                    // Check Status using GENERATED ID
                     const availStatus = statusMap.get(generatedId);
-                    // 0 = Booked, 1 = Available, 2 = Locked
-                    const isBooked = availStatus === 0 || availStatus === 2;
+                    // "available", "locked", "booked"
+                    const isBooked = availStatus === "booked" || availStatus === "locked";
 
                     const isSelected = selectedSeats.includes(uniqueId);
 
