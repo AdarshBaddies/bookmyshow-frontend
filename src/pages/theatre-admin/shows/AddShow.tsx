@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useLazyQuery, useQuery } from '@apollo/client';
 import { ADD_SHOW } from '../../../graphql/mutations';
-import { GET_SCREENS, GET_MOVIES, FETCH_THEATRE, GET_SCREEN } from '../../../graphql/queries';
+import { GET_SCREENS, GET_MOVIES, FETCH_THEATRE, GET_SCREEN, GET_MOVIE } from '../../../graphql/queries';
 import { useNavigate } from 'react-router-dom';
 import './AddShow.css';
 
@@ -26,6 +26,7 @@ function AddShow() {
     const [getScreens] = useLazyQuery(GET_SCREENS);
     const [fetchTheatre] = useLazyQuery(FETCH_THEATRE);
     const [getScreen] = useLazyQuery(GET_SCREEN);
+    const [getMovie, { data: movieDetailData }] = useLazyQuery(GET_MOVIE);
 
     // Fetch Movies for dropdown
     const { data: moviesData } = useQuery(GET_MOVIES, {
@@ -42,10 +43,25 @@ function AddShow() {
     });
 
     const [showSlots, setShowSlots] = useState<ShowSlot[]>([
-        { id: Date.now(), showTime: '', screenId: '', layoutId: '', lang: 'Hindi', pricing: [] }
+        { id: Date.now(), showTime: '', screenId: '', layoutId: '', lang: '', pricing: [] }
     ]);
 
     const [availableScreens, setAvailableScreens] = useState<any[]>([]);
+
+    const handleMovieChange = (movieId: string) => {
+        setGlobalInfo(prev => ({ ...prev, movieId }));
+        if (movieId) {
+            getMovie({ variables: { id: movieId } });
+        }
+    };
+
+    // Update slots with first available language when movie data arrives
+    useEffect(() => {
+        if (movieDetailData?.movie?.langs?.length > 0) {
+            const firstLang = movieDetailData.movie.langs[0];
+            setShowSlots(slots => slots.map(s => s.lang ? s : { ...s, lang: firstLang }));
+        }
+    }, [movieDetailData]);
 
     const handleTheatreBlur = async () => {
         if (!globalInfo.theatreId) return;
@@ -197,7 +213,7 @@ function AddShow() {
                                 <label>Select Movie *</label>
                                 <select
                                     value={globalInfo.movieId}
-                                    onChange={e => setGlobalInfo({ ...globalInfo, movieId: e.target.value })}
+                                    onChange={e => handleMovieChange(e.target.value)}
                                     required
                                 >
                                     <option value="">-- Choose Movie --</option>
@@ -227,74 +243,82 @@ function AddShow() {
                             </button>
                         </h3>
 
-                        <div className="slots-container">
+                        <div className="slots-container vertical-stack">
                             {showSlots.map((slot, index) => (
                                 <div key={slot.id} className="show-slot-card">
-                                    <div className="slot-main-fields">
-                                        <div className="form-group">
-                                            <label>Time</label>
-                                            <input
-                                                type="time"
-                                                value={slot.showTime}
-                                                onChange={e => handleSlotChange(slot.id, 'showTime', e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Screen</label>
-                                            <select
-                                                value={slot.screenId}
-                                                onChange={e => handleSlotChange(slot.id, 'screenId', e.target.value)}
-                                                disabled={availableScreens.length === 0}
-                                                required
-                                            >
-                                                <option value="">Select Screen</option>
-                                                {availableScreens.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Language</label>
-                                            <select
-                                                value={slot.lang}
-                                                onChange={e => handleSlotChange(slot.id, 'lang', e.target.value)}
-                                                required
-                                            >
-                                                <option value="Hindi">Hindi</option>
-                                                <option value="English">English</option>
-                                                <option value="Tamil">Tamil</option>
-                                                <option value="Telugu">Telugu</option>
-                                            </select>
-                                        </div>
+                                    <div className="slot-header">
+                                        <h4>Slot #{index + 1}</h4>
                                         <button
                                             type="button"
-                                            className="btn-remove-slot"
+                                            className="btn-remove-slot-text"
                                             onClick={() => handleRemoveSlot(slot.id)}
                                             disabled={showSlots.length === 1}
                                         >
-                                            🗑️
+                                            Remove Slot
                                         </button>
                                     </div>
-
-                                    {/* Pricing categories for THIS slot */}
-                                    {slot.pricing.length > 0 && (
-                                        <div className="slot-pricing-section">
-                                            <h4>Set Pricing</h4>
-                                            <div className="slot-pricing-grid">
-                                                {slot.pricing.map(p => (
-                                                    <div key={p.categoryId} className="slot-price-row">
-                                                        <span className="cat-name">{p.categoryName}</span>
-                                                        <input
-                                                            type="number"
-                                                            value={p.price}
-                                                            onChange={e => handleSlotPriceChange(slot.id, p.categoryId, Number(e.target.value))}
-                                                            placeholder="Price (INR)"
-                                                            required
-                                                        />
-                                                    </div>
-                                                ))}
+                                    <div className="slot-body">
+                                        <div className="slot-form-grid">
+                                            <div className="form-group">
+                                                <label>Start Time</label>
+                                                <input
+                                                    type="time"
+                                                    value={slot.showTime}
+                                                    onChange={e => handleSlotChange(slot.id, 'showTime', e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Screen / Hall</label>
+                                                <select
+                                                    value={slot.screenId}
+                                                    onChange={e => handleSlotChange(slot.id, 'screenId', e.target.value)}
+                                                    disabled={availableScreens.length === 0}
+                                                    required
+                                                >
+                                                    <option value="">Select Screen</option>
+                                                    {availableScreens.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Language</label>
+                                                <select
+                                                    value={slot.lang}
+                                                    onChange={e => handleSlotChange(slot.id, 'lang', e.target.value)}
+                                                    required
+                                                    disabled={!movieDetailData?.movie?.langs}
+                                                >
+                                                    <option value="">Select Language</option>
+                                                    {movieDetailData?.movie?.langs?.map((l: string) => (
+                                                        <option key={l} value={l}>{l}</option>
+                                                    ))}
+                                                    {(!movieDetailData?.movie?.langs && globalInfo.movieId) && <option disabled>Loading languages...</option>}
+                                                    {(!globalInfo.movieId) && <option disabled>Select a movie first</option>}
+                                                </select>
                                             </div>
                                         </div>
-                                    )}
+
+                                        {/* Pricing categories for THIS slot */}
+                                        {slot.pricing.length > 0 && (
+                                            <div className="slot-pricing-section">
+                                                <h4>Set Pricing</h4>
+                                                <div className="slot-pricing-grid">
+                                                    {slot.pricing.map(p => (
+                                                        <div key={p.categoryId} className="slot-price-row">
+                                                            <span className="cat-name">{p.categoryName}</span>
+                                                            <input
+                                                                type="number"
+                                                                value={p.price}
+                                                                onChange={e => handleSlotPriceChange(slot.id, p.categoryId, Number(e.target.value))}
+                                                                placeholder="0"
+                                                                required
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
