@@ -17,7 +17,7 @@ The platform supports the complete booking lifecycle:
 * Real-time seat availability and concurrent booking protection
 * Asynchronous booking finalization through backend events
 
-The frontend is intentionally kept independent and stateless, designed to scale horizontally behind a CDN.
+
 
 ---
 
