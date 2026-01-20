@@ -60,37 +60,44 @@ The platform is composed of multiple domain-focused services coordinated via Gra
 
 ```mermaid
 graph TD
+    %% Entry
     UI[User / Admin UI] --> GQL[GraphQL Gateway]
 
-    %% Core Domain Services
-    GQL --> MovieSvc[Movie Service]
-    GQL --> TheatreSvc[Theatre Service]
-    GQL --> ScreenSvc[Screen Service]
-    GQL --> ShowSvc[Show Service]
-    GQL --> UserSvc[User / Auth Service]
-    GQL --> BookingSvc[Booking Service]
+    %% Admin & Content Management
+    GQL -->|mutations| MovieSvc[Movie Service]
+    GQL -->|mutations| TheatreSvc[Theatre Service]
+    GQL -->|mutations| ScreenSvc[Screen Service]
+    GQL -->|mutations| ShowSvc[Show Service]
 
-    %% Data Stores
     MovieSvc --> Mongo[(MongoDB)]
+    MovieSvc --> RedisUser[(Redis - User Cache)]
+
     TheatreSvc --> PG[(Postgres)]
     ScreenSvc --> PG
     ShowSvc --> PG
-    UserSvc --> PG
-
-    %% Caching & Availability
-    MovieSvc --> RedisUser[(Redis Cache)]
     ShowSvc --> RedisUser
 
-    %% Booking Concurrency
-    BookingSvc --> RedisLock[(Redis Seat Locks)]
-    BookingSvc --> BookingDB[(Booking Store)]
+    %% User Access
+    GQL --> UserSvc[User Service]
+    GQL --> Guest[Guest Access]
+    UserSvc --> PG
 
-    %% Eventing
-    BookingSvc --> Kafka[(Kafka)]
-    Kafka --> Notify[Notifications / Downstream Consumers]
+    %% Booking Flow
+    GQL -->|start booking| BookingSvc[Booking Service]
+    BookingSvc --> RedisLock[(Redis - Seat Locks)]
+    BookingSvc --> BookingDB[(Booking Data Store)]
 
-    %% CDN
-    UI --> CDN[CDN]
+    %% Events
+    BookingSvc --> KafkaBooking[(Kafka - Booking Events)]
+
+    %% Payment Flow
+    BookingSvc --> PaymentSvc[Payment Service]
+    PaymentSvc --> KafkaPayment[(Kafka - Payment Events)]
+    PSP[PSP] -->|webhook| PaymentSvc
+
+    %% Finalization
+    KafkaBooking --> Notify[Notification Service]
+    Notify --> Mail[Email / SMS]
 ```
 
 ```mermaid
