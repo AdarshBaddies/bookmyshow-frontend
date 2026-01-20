@@ -1,5 +1,7 @@
 # Movie & Event Booking Platform – Frontend
 
+**Backend services:** [https://github.com/movie-event-booking](https://github.com/movie-event-booking)
+
 A production-grade frontend application for a high-concurrency movie and event booking system, inspired by BookMyShow-scale architectures. This repository focuses on the **user and admin-facing interfaces** and acts as the primary entry point into a distributed backend composed of multiple Go microservices.
 
 This frontend communicates exclusively through a **GraphQL API Gateway**, which orchestrates requests across backend services using gRPC and event-driven workflows.
@@ -52,7 +54,44 @@ Backend repositories: [https://github.com/movie-event-booking](https://github.co
 
 ---
 
-## High-Level Request Flow
+## System Flow Overview
+
+The platform is composed of multiple domain-focused services coordinated via GraphQL, gRPC, Redis, and Kafka.
+
+```mermaid
+graph TD
+    UI[User / Admin UI] --> GQL[GraphQL Gateway]
+
+    %% Core Domain Services
+    GQL --> MovieSvc[Movie Service]
+    GQL --> TheatreSvc[Theatre Service]
+    GQL --> ScreenSvc[Screen Service]
+    GQL --> ShowSvc[Show Service]
+    GQL --> UserSvc[User / Auth Service]
+    GQL --> BookingSvc[Booking Service]
+
+    %% Data Stores
+    MovieSvc --> Mongo[(MongoDB)]
+    TheatreSvc --> PG[(Postgres)]
+    ScreenSvc --> PG
+    ShowSvc --> PG
+    UserSvc --> PG
+
+    %% Caching & Availability
+    MovieSvc --> RedisUser[(Redis Cache)]
+    ShowSvc --> RedisUser
+
+    %% Booking Concurrency
+    BookingSvc --> RedisLock[(Redis Seat Locks)]
+    BookingSvc --> BookingDB[(Booking Store)]
+
+    %% Eventing
+    BookingSvc --> Kafka[(Kafka)]
+    Kafka --> Notify[Notifications / Downstream Consumers]
+
+    %% CDN
+    UI --> CDN[CDN]
+```
 
 ```mermaid
 graph TD
