@@ -100,34 +100,6 @@ graph TD
     Notify --> Mail[Email / SMS]
 ```
 
-```mermaid
-graph TD
-    User[User / Admin UI] -->|Queries & Mutations| GQL[GraphQL Gateway]
-
-    GQL --> MovieSvc[Movie Service]
-    GQL --> TheatreSvc[Theatre Service]
-    GQL --> ScreenSvc[Screen Service]
-    GQL --> ShowSvc[Show Service]
-    GQL --> BookingSvc[Booking Service]
-
-    BookingSvc -->|Seat Locks| Redis[(Redis)]
-    BookingSvc -->|Events| Kafka[(Kafka)]
-
-    Kafka --> Notify[Async Notifications]
-```
-
----
-
-## Booking Flow (Simplified)
-
-```mermaid
-graph LR
-    U[User Selects Seats] --> B[Booking Service]
-    B -->|Atomic Lock| R[Redis]
-    B -->|Confirm Event| K[Kafka]
-    K --> C[Booking Confirmation]
-```
-
 ---
 
 ## Visual Overview
